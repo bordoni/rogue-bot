@@ -1,0 +1,7 @@
+# Node
+node_modules
+
+# Project files
+config.json
+db.json
+log.json
