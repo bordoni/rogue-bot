@@ -1,6 +1,7 @@
 import arg from 'arg';
 import inquirer from 'inquirer';
-import { crawl } from './main';
+
+const { crawl } = require( './main' );
 const inventory = require( './inventory' );
 const chalk = require( 'chalk' );
 

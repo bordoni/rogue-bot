@@ -2,6 +2,7 @@
 node_modules
 
 # Project files
+crontab.log
 config.json
 db.json
 log.json
