@@ -8,46 +8,22 @@ const FormData = require('form-data');
 
 const got = require( 'got' );
 
+const config = require( '../config' );
+const db = require( '../db' );
+
 const {inspect} = require('util');
 const {readFileSync} = require('fs');
 
 const CODE = 'ERR_INVALID_OPT_VALUE_ENCODING';
 const ENCODING_ERROR = 'read-json-sync expected the encoding option to be a <string> (defaulting to \'utf8\' if nothing is specified) so as to convert file contents from <Buffer> to <string> before parsing it as JSON';
 
-const readJsonSync = function(...args) {
-	const argLen = args.length;
+const readJsonSync = function(jsonFile, defaultValue = null, options = {}) {
+	options = {encoding: 'utf8', ...options};
+	const str = readFileSync(jsonFile, options);
 
-	if (argLen === 2) {
-		const options = args[1];
-		const isObject = typeof options === 'object';
-
-		if (options === null || (isObject && options.encoding !== undefined && typeof options.encoding !== 'string')) {
-			const encoding = options === null ? null : options.encoding;
-			const error = new TypeError(`${ENCODING_ERROR}, but a non-string value ${inspect(encoding)} was provided.`);
-			error.code = CODE;
-
-			throw error;
-		}
-
-		if (options === '' || (isObject && options.encoding === '')) {
-			const error = new TypeError(`${ENCODING_ERROR.replace('<', 'non-empty <')}, but '' (empty string) was provided.`);
-			error.code = CwODE;
-
-			throw error;
-		}
-
-		if (isObject || options === undefined) {
-			args[1] = {encoding: 'utf8', ...options};
-		}
-	} else if (argLen === 1) {
-		args.push('utf8');
-	} else {
-		throw new RangeError(`Expected 1 or 2 arguments (path[, options]), but got ${
-			argLen === 0 ? 'no' : argLen
-		} arguments.`);
+	if ( '' === str.trim() ) {
+		return defaultValue;
 	}
-
-	const str = readFileSync(...args);
 
 	return JSON.parse(str.charCodeAt(0) === 65279 /* 0xFEFF */ ? str.slice(1) : str);
 };
@@ -55,11 +31,7 @@ const readJsonSync = function(...args) {
 module.exports.readJsonSync = readJsonSync;
 
 module.exports.addLog = async function( log ) {
-	let logs = readJsonSync( path.resolve( __dirname, '../logs.json' ) );
-
-	if ( ! Array.isArray( logs ) ) {
-		logs = [];
-	}
+	let logs = readJsonSync( path.resolve( __dirname, '../logs.json' ), [] );
 
 	// Add log timing of the request to the JSON log.
 	logs.push( log );

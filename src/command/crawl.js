@@ -1,15 +1,66 @@
-import chalk from 'chalk';
 import { v4 as uuidv4 } from 'uuid';
 
+const arg = require( 'arg' );
+const chalk = require( 'chalk' );
+const inquirer = require( 'inquirer' );
 const moment = require('moment');
 const crypto = require('crypto');
-
-const { parseContent } = require( './../scrapper' )
-const { notify, addLog } = require( './../utils' )
-
 const got = require( 'got' );
 
-module.exports = async function(options) {
+const db = require( '../db' );
+const { parseContent } = require( '../scrapper' );
+const inventory = require( '../inventory' );
+const { notify, addLog } = require( '../utils' );
+
+module.exports.parseArgs = function( rawArgs, options ) {
+	const args = arg(
+		{
+			'--url': String,
+			'-u': '--url',
+
+			'--item': String,
+			'-i': '--item',
+		},
+		{
+			argv: rawArgs.slice(2),
+		}
+	);
+
+	options.url = args['--url'] || '';
+	options.item = args['--item'] || '';
+
+	return options;
+};
+
+module.exports.prompt = async function( options ) {
+	const questions = [];
+
+	if ( ! options.url && ! options.item ) {
+		questions.push({
+			type: 'input',
+			name: 'url',
+			message: 'Which product you are trying to crawl?',
+			default: null,
+		});
+	}
+
+	const answers = await inquirer.prompt(questions);
+
+	return {
+		...options,
+		url: options.url || answers.url,
+		item: options.item || answers.item,
+	};
+};
+
+module.exports.run = async function( options ) {
+	if ( options.item && options.item in inventory === false ) {
+		console.error( chalk.red.bold( 'ERROR:' ), 'Invalid item from the inventory', ' "' + options.item + '"' );
+		return false;
+	} else {
+		options.item = inventory[ options.item ]
+	}
+
 	const requestTime = moment().format( 'YYYY-MM-DD HH:mm:ss' );
 
 	let url;
@@ -23,14 +74,14 @@ module.exports = async function(options) {
 		itemType = 'simple';
 	}
 
-	const id = crypto.createHash('md5').update(url).digest("hex");;
+	const id = crypto.createHash('md5').update(url).digest("hex");
 	url = url + '?=' + uuidv4()
 
 	const { body, statusCode } = await got(url);
 
 	if ( 200 !== statusCode ) {
 		console.error('%s Invalid URL or Failed Request', chalk.red.bold('ERROR'));
-		process.exit(1);
+		return false;
 	}
 
 	const items = parseContent( body, itemType );
@@ -56,7 +107,6 @@ module.exports = async function(options) {
 	// Bail without email when there is no stock.
 	if ( ! inStock )  {
 		console.error( chalk.red.bold( 'No stock available, no email sent.' ) );
-
 		return true;
 	}
 
@@ -64,7 +114,6 @@ module.exports = async function(options) {
 
 	if ( foundNotification && moment( foundNotification.registered ).isSame( moment(), 'day' ) ) {
 		console.error( chalk.red.bold( 'Email has already been sent today.' ) );
-		process.exit( 1 );
 		return true;
 	}
 
@@ -72,7 +121,7 @@ module.exports = async function(options) {
 
 	if ( 'undefined' !== typeof notification.error ) {
 		console.error( chalk.red.bold( notification.error ) );
-		process.exit( 1 );
+		return false;
 	}
 
 	console.error( chalk.green.bold( 'Sent email with stock notification.' ) );
