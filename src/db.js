@@ -1,5 +1,9 @@
-import fs from 'fs';
 import path from 'path';
 
-const { readJsonSync } = require( './utils' );
-module.exports = readJsonSync( path.resolve( __dirname, '../db.json' ) ) || {};
+const low = require('lowdb');
+const FileSync = require('lowdb/adapters/FileSync');
+
+const adapter = new FileSync( path.resolve( __dirname, '../db.json' ) );
+const db = low(adapter);
+
+module.exports = db.defaults({ notifications: [] });

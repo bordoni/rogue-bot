@@ -86,16 +86,14 @@ module.exports.run = async function( options ) {
 
 	const items = parseContent( body, itemType );
 	const response = {
-		'time': requestTime,
-		'id': id,
-		'url': url,
-		'items': items,
-	}
-
-	// Add this to the log.
-	await addLog( response );
-
+		time: requestTime,
+		id: id,
+		url: url,
+		items: items,
+		emailSent: false,
+	};
 	console.log( response );
+
 	let inStock = false;
 
 	items.forEach( function( item, index ) {
@@ -106,13 +104,19 @@ module.exports.run = async function( options ) {
 
 	// Bail without email when there is no stock.
 	if ( ! inStock )  {
+		// Add this to the log.
+		await addLog( response );
+
 		console.error( chalk.red.bold( 'No stock available, no email sent.' ) );
 		return true;
 	}
 
-	const foundNotification = db.notifications.find( o => o.id === id );
+	const foundNotification = db.get( 'notifications' ).findLast( { id: id } );
 
-	if ( foundNotification && moment( foundNotification.registered ).isSame( moment(), 'day' ) ) {
+	if ( foundNotification.value() && moment( foundNotification.value().registered ).isSame( moment(), 'day' ) ) {
+		// Add this to the log.
+		await addLog( response );
+
 		console.error( chalk.red.bold( 'Email has already been sent today.' ) );
 		return true;
 	}
@@ -123,6 +127,11 @@ module.exports.run = async function( options ) {
 		console.error( chalk.red.bold( notification.error ) );
 		return false;
 	}
+
+	response.emailSent = true;
+
+	// Add this to the log later in case of email..
+	await addLog( response );
 
 	console.error( chalk.green.bold( 'Sent email with stock notification.' ) );
 
