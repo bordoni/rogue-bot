@@ -5,12 +5,12 @@ const chalk = require( 'chalk' );
 const inquirer = require( 'inquirer' );
 const moment = require('moment');
 const crypto = require('crypto');
-const got = require( 'got' );
 
 const db = require( '../db' );
 const { parseContent } = require( '../scrapper' );
 const inventory = require( '../inventory' );
 const { notify, addLog } = require( '../utils' );
+const { doRequest } = require( '../request' );
 
 module.exports.parseArgs = function( rawArgs, options ) {
 	const args = arg(
@@ -55,7 +55,7 @@ module.exports.prompt = async function( options ) {
 
 module.exports.run = async function( options ) {
 	if ( options.item && options.item in inventory === false ) {
-		console.error( chalk.red.bold( 'ERROR:' ), 'Invalid item from the inventory', ' "' + options.item + '"' );
+		console.error( chalk.red.bold( 'ERROR:' ), `Invalid item from the inventory "${options.item}"` );
 		return false;
 	} else {
 		options.item = inventory[ options.item ]
@@ -71,18 +71,13 @@ module.exports.run = async function( options ) {
 		itemType = options.item.type;
 	} else {
 		url = options.url;
-		itemType = 'simple';
+		itemType = null;
 	}
 
 	const id = crypto.createHash('md5').update(url).digest("hex");
 	url = url + '?=' + uuidv4()
 
-	const { body, statusCode } = await got(url);
-
-	if ( 200 !== statusCode ) {
-		console.error('%s Invalid URL or Failed Request', chalk.red.bold('ERROR'));
-		return false;
-	}
+	const body = await doRequest( url );
 
 	const items = parseContent( body, itemType );
 	const response = {

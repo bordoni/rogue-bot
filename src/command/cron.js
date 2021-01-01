@@ -23,7 +23,7 @@ module.exports.parseArgs = function( rawArgs, options ) {
 		}
 	);
 
-	options.rule = args['--rule'] || '0 */5 * * * *';
+	options.rule = args['--rule'] || '0 * * * * *';
 	options.items = args['--items'] || [];
 
 	return options;
@@ -33,6 +33,10 @@ module.exports.prompt = async function( options ) {
 	return {
 		...options,
 	};
+};
+
+const randomIntInc = ( low, high ) => {
+  return Math.floor( Math.random() * ( high - low + 1 ) + low )
 };
 
 module.exports.run = async function( options ) {
@@ -45,7 +49,10 @@ module.exports.run = async function( options ) {
 		cron.schedule(
 			options.rule,
 			() => {
-				crawl.run( { item: item } );
+				const delayms = randomIntInc( 1, 15 ) * 1000;
+				setTimeout( () => {
+					crawl.run( { item: item } );
+				}, delayms );
 			}
 		);
 	} );

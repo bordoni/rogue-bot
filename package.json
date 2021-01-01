@@ -34,9 +34,12 @@
     "got": "^11.8.1",
     "inquirer": "^7.3.3",
     "listr": "^0.14.3",
+    "lodash": "^4.17.20",
     "lowdb": "^1.0.0",
     "moment": "^2.29.1",
     "node-cron": "^2.0.3",
+    "top-user-agents": "^1.0.19",
+    "unique-random-array": "^2.0.0",
     "uuid": "^8.3.2"
   }
 }
