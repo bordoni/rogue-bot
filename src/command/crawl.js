@@ -11,6 +11,7 @@ const { parseContent } = require( '../scrapper' );
 const inventory = require( '../inventory' );
 const { notify, addLog } = require( '../utils' );
 const { doRequest } = require( '../request' );
+const { getRandomProxy, getProxies, testProxy } = require( '../proxy' );
 
 module.exports.parseArgs = function( rawArgs, options ) {
 	const args = arg(

@@ -1,9 +1,12 @@
 const got = require( 'got' );
 const userAgents = require('top-user-agents');
 const uniqueRandomArray = require('unique-random-array');
+const tunnel = require('tunnel');
+const { getRandomProxy } = require( './proxy' );
 
 exports.doRequest = async ( url ) => {
 	const randomUserAgent = uniqueRandomArray( userAgents );
+	const randomProxy = await getRandomProxy();
 	const options = {
 		headers: {
 			'User-Agent': randomUserAgent,
@@ -12,7 +15,7 @@ exports.doRequest = async ( url ) => {
 	        'Accept-Encoding': 'gzip, deflate, br',
 	        'Accept-Language': 'en-US,en;q=0.9',
 	        'Pragma': 'no-cache',
-		}
+		},
 	};
 	const { body, statusCode } = await got( url, options );
 

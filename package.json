@@ -39,6 +39,7 @@
     "moment": "^2.29.1",
     "node-cron": "^2.0.3",
     "top-user-agents": "^1.0.19",
+    "tunnel": "0.0.6",
     "unique-random-array": "^2.0.0",
     "uuid": "^8.3.2"
   }
